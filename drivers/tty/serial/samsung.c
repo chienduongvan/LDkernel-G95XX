@@ -1494,7 +1494,7 @@ static int s3c24xx_serial_init_port(struct s3c24xx_uart_port *ourport,
 		return -ENODEV;
 
 	if (port->mapbase != 0)
-		return 0;
+		return -EINVAL;
 
 	/* setup info for port */
 	port->dev	= &platdev->dev;
@@ -1594,7 +1594,12 @@ static int s3c24xx_serial_init_port(struct s3c24xx_uart_port *ourport,
 
 	/* reset the fifos (and setup the uart) */
 	s3c24xx_serial_resetport(port, cfg);
+
 	return 0;
+
+err:
+	port->mapbase = 0;
+	return ret;
 }
 
 #ifdef CONFIG_SAMSUNG_CLOCK

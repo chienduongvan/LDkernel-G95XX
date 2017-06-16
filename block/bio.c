@@ -701,6 +701,8 @@ integrity_clone:
 		}
 	}
 
+	bio_clone_blkcg_association(bio, bio_src);
+
 	return bio;
 }
 EXPORT_SYMBOL(bio_clone_bioset);
@@ -2024,6 +2026,17 @@ void bio_disassociate_task(struct bio *bio)
 		css_put(bio->bi_css);
 		bio->bi_css = NULL;
 	}
+}
+
+/**
+ * bio_clone_blkcg_association - clone blkcg association from src to dst bio
+ * @dst: destination bio
+ * @src: source bio
+ */
+void bio_clone_blkcg_association(struct bio *dst, struct bio *src)
+{
+	if (src->bi_css)
+		WARN_ON(bio_associate_blkcg(dst, src->bi_css));
 }
 
 #endif /* CONFIG_BLK_CGROUP */
