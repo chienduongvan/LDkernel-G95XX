@@ -419,6 +419,7 @@ out_rcu_unlock:
 	goto out;
 }
 
+#ifdef CONFIG_KNOX_NCM
 /** The function is used to check if the ncm feature is enabled or not; if enabled then collect the socket meta-data information; **/
 static void knox_collect_metadata(struct socket *sock) {
     if(check_ncm_flag()) {
@@ -477,6 +478,7 @@ static void knox_collect_metadata(struct socket *sock) {
         }
     }
 }
+#endif
 
 /*
  *	The peer socket should always be NULL (or else). When we call this
@@ -504,7 +506,9 @@ int inet_release(struct socket *sock)
 		if (sock_flag(sk, SOCK_LINGER) &&
 		    !(current->flags & PF_EXITING))
 			timeout = sk->sk_lingertime;
+#ifdef CONFIG_KNOX_NCM
         knox_collect_metadata(sock);
+#endif
 		sock->sk = NULL;
 		sk->sk_prot->close(sk, timeout);
 	}
@@ -1564,6 +1568,13 @@ out_unlock:
 	return err;
 }
 
+static int ipip_gro_complete(struct sk_buff *skb, int nhoff)
+{
+	skb->encapsulation = 1;
+	skb_shinfo(skb)->gso_type |= SKB_GSO_IPIP;
+	return inet_gro_complete(skb, nhoff);
+}
+
 int inet_ctl_sock_create(struct sock **sk, unsigned short family,
 			 unsigned short type, unsigned char protocol,
 			 struct net *net)
@@ -1792,7 +1803,7 @@ static const struct net_offload ipip_offload = {
 	.callbacks = {
 		.gso_segment	= inet_gso_segment,
 		.gro_receive	= ipip_gro_receive,
-		.gro_complete	= inet_gro_complete,
+		.gro_complete	= ipip_gro_complete,
 	},
 };
 
