@@ -122,7 +122,7 @@ static inline int __ext4_get_fek(char *nonce, char *src_key, char *fe_key)
 #endif
 }
 
-int _ext4_get_encryption_info(struct inode *inode)
+int ext4_get_encryption_info(struct inode *inode)
 {
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	struct ext4_crypt_info *crypt_info;
@@ -139,20 +139,13 @@ int _ext4_get_encryption_info(struct inode *inode)
 	char mode;
 	int res;
 
+	if (ei->i_crypt_info)
+		return 0;
+
 	if (!ext4_read_workqueue) {
 		res = ext4_init_crypto();
 		if (res)
 			return res;
-	}
-
-retry:
-	crypt_info = ACCESS_ONCE(ei->i_crypt_info);
-	if (crypt_info) {
-		if (!crypt_info->ci_keyring_key ||
-		    key_validate(crypt_info->ci_keyring_key) == 0)
-			return 0;
-		ext4_free_encryption_info(inode, crypt_info);
-		goto retry;
 	}
 
 	res = ext4_xattr_get(inode, EXT4_XATTR_INDEX_ENCRYPTION,
@@ -185,7 +178,6 @@ retry:
 	}
 #endif /* ifdef CONFIG_FMP_EXT4CRYPT_FS */
 	crypt_info->ci_ctfm = NULL;
-	crypt_info->ci_keyring_key = NULL;
 	memcpy(crypt_info->ci_master_key, ctx.master_key_descriptor,
 	       sizeof(crypt_info->ci_master_key));
 	if (S_ISREG(inode->i_mode))
@@ -242,7 +234,6 @@ retry:
 		keyring_key = NULL;
 		goto out;
 	}
-	crypt_info->ci_keyring_key = keyring_key;
 	if (keyring_key->type != &key_type_logon) {
 		printk_once(KERN_WARNING
 			     "ext4: key type must be logon\n");
