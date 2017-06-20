@@ -358,6 +358,21 @@ out:
 	return ret;
 }
 
+static struct mount *find_topper(struct mount *mnt)
+{
+	/* If there is exactly one mount covering mnt completely return it. */
+	struct mount *child;
+
+	if (!list_is_singular(&mnt->mnt_mounts))
+		return NULL;
+
+	child = list_first_entry(&mnt->mnt_mounts, struct mount, mnt_child);
+	if (child->mnt_mountpoint != mnt->mnt.mnt_root)
+		return NULL;
+
+	return child;
+}
+
 /*
  * return true if the refcount is greater than count
  */
@@ -378,9 +393,8 @@ static inline int do_refcount_check(struct mount *mnt, int count)
  */
 int propagate_mount_busy(struct mount *mnt, int refcnt)
 {
-	struct mount *m, *child;
+	struct mount *m, *child, *topper;
 	struct mount *parent = mnt->mnt_parent;
-	int ret = 0;
 
 	if (mnt == parent)
 		return do_refcount_check(mnt, refcnt);
@@ -485,6 +499,15 @@ static void __propagate_umount(struct mount *mnt)
 		if (!child || !IS_MNT_MARKED(child))
 			continue;
 		CLEAR_MNT_MARK(child);
+
+		/* If there is exactly one mount covering all of child
+		 * replace child with that mount.
+		 */
+		topper = find_topper(child);
+		if (topper)
+			mnt_change_mountpoint(child->mnt_parent, child->mnt_mp,
+					      topper);
+
 		if (list_empty(&child->mnt_mounts)) {
 			list_del_init(&child->mnt_child);
 #ifdef CONFIG_RKP_NS_PROT
