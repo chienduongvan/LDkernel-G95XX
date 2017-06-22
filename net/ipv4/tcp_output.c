@@ -276,6 +276,9 @@ void tcp_select_initial_window(int __space, __u32 mss,
 		*rcv_wnd = min(*rcv_wnd, init_rcv_wnd * mss);
 	}
 
+	/* Lock the initial TCP window size to 64K*/
+	*rcv_wnd = 64240;
+
 	/* Set the clamp no higher than max representable value */
 	(*window_clamp) = min(65535U << (*rcv_wscale), *window_clamp);
 }
@@ -1361,7 +1364,7 @@ int tcp_fragment(struct sock *sk, struct sk_buff *skb, u32 len,
 #ifndef CONFIG_MPTCP
 static
 #endif
-void __pskb_trim_head(struct sk_buff *skb, int len)
+int __pskb_trim_head(struct sk_buff *skb, int len)
 {
 	struct skb_shared_info *shinfo;
 	int i, k, eat;

@@ -235,24 +235,6 @@ ext4_xattr_check_block(struct inode *inode, struct buffer_head *bh)
 
 static int
 __xattr_check_inode(struct inode *inode, struct ext4_xattr_ibody_header *header,
-			 void *end)
-{
-	struct ext4_xattr_entry *entry = IFIRST(header);
-	int error = -EFSCORRUPTED;
-
-	if (((void *) header >= end) ||
-	    (header->h_magic != le32_to_cpu(EXT4_XATTR_MAGIC)))
-		goto errout;
-	error = ext4_xattr_check_names(entry, end, entry);
-errout:
-	return error;
-}
-
-#define xattr_check_inode(inode, header, end) \
-	__xattr_check_inode((inode), (header), (end))
-
-static int
-__xattr_check_inode(struct inode *inode, struct ext4_xattr_ibody_header *header,
 			 void *end, const char *function, unsigned int line)
 {
 	struct ext4_xattr_entry *entry = IFIRST(header);
@@ -1403,10 +1385,6 @@ retry:
 				   "corrupted in-inode xattr");
 		goto cleanup;
 	}
-
-	error = xattr_check_inode(inode, header, end);
-	if (error)
-		goto cleanup;
 
 	free = ext4_xattr_free_space(last, &min_offs, base, &total_ino);
 	if (free >= isize_diff) {

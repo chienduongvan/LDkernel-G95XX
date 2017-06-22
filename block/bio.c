@@ -598,6 +598,8 @@ void __bio_clone_fast(struct bio *bio, struct bio *bio_src)
 	bio->private_enc_algo = bio_src->private_enc_algo;
 	bio->key = bio_src->key;
 	bio->key_length = bio_src->key_length;
+
+	bio_clone_blkcg_association(bio, bio_src);
 }
 EXPORT_SYMBOL(__bio_clone_fast);
 

@@ -52,11 +52,27 @@ struct uhid_device {
 	u32 report_id;
 	u32 report_type;
 	struct uhid_event report_buf;
+	struct work_struct worker;
 };
 
 static struct miscdevice uhid_misc;
 
 bool lcd_is_on = true;
+
+static void uhid_device_add_worker(struct work_struct *work)
+{
+	struct uhid_device *uhid = container_of(work, struct uhid_device, worker);
+	int ret;
+
+	ret = hid_add_device(uhid->hid);
+	if (ret) {
+		hid_err(uhid->hid, "Cannot register HID device: error %d\n", ret);
+
+		hid_destroy_device(uhid->hid);
+		uhid->hid = NULL;
+		uhid->running = false;
+	}
+}
 
 static void uhid_queue(struct uhid_device *uhid, struct uhid_event *ev)
 {

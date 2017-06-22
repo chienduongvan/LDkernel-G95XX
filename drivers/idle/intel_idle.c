@@ -736,26 +736,6 @@ static struct cpuidle_state knl_cstates[] = {
 	{
 		.enter = NULL }
 };
-static struct cpuidle_state knl_cstates[] = {
-	{
-		.name = "C1-KNL",
-		.desc = "MWAIT 0x00",
-		.flags = MWAIT2flg(0x00),
-		.exit_latency = 1,
-		.target_residency = 2,
-		.enter = &intel_idle,
-		.enter_freeze = intel_idle_freeze },
-	{
-		.name = "C6-KNL",
-		.desc = "MWAIT 0x10",
-		.flags = MWAIT2flg(0x10) | CPUIDLE_FLAG_TLB_FLUSHED,
-		.exit_latency = 120,
-		.target_residency = 500,
-		.enter = &intel_idle,
-		.enter_freeze = intel_idle_freeze },
-	{
-		.enter = NULL }
-};
 
 /**
  * intel_idle
@@ -928,10 +908,6 @@ static const struct idle_cpu idle_cpu_skl = {
 static const struct idle_cpu idle_cpu_avn = {
 	.state_table = avn_cstates,
 	.disable_promotion_to_c1e = true,
-};
-
-static const struct idle_cpu idle_cpu_knl = {
-	.state_table = knl_cstates,
 };
 
 static const struct idle_cpu idle_cpu_knl = {
