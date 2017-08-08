@@ -115,17 +115,17 @@ extern void rkp_free_security(unsigned long tsec);
 u8 rkp_ro_page(unsigned long addr);
 static inline unsigned int cmp_sec_integrity(const struct cred *cred,struct mm_struct *mm)
 {
-	return ((cred->bp_task != current) ||
-			(mm && (!( in_interrupt() || in_softirq())) &&
+	return ((cred->bp_task != current) || 
+			(mm && (!( in_interrupt() || in_softirq())) && 
 			(mm->pgd != cred->bp_pgd)));
-
+			
 }
 extern struct cred init_cred;
 static inline unsigned int rkp_is_valid_cred_sp(u64 cred,u64 sp)
 {
 		struct task_security_struct *tsec = (struct task_security_struct *)sp;
 
-		if((cred == (u64)&init_cred) &&
+		if((cred == (u64)&init_cred) && 
 			( sp == (u64)&init_sec)){
 			return 0;
 		}
@@ -156,7 +156,7 @@ inline void rkp_print_debug(void)
 /* Main function to verify cred security context of a process */
 int security_integrity_current(void)
 {
-	if ( rkp_cred_enable &&
+	if ( rkp_cred_enable && 
 		(rkp_is_valid_cred_sp((u64)current_cred(),(u64)current_cred()->security)||
 		cmp_sec_integrity(current_cred(),current->mm)||
 		cmp_ns_integrity())) {
@@ -180,17 +180,15 @@ unsigned int rkp_get_offset_bp_cred(void)
 static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
 
 #ifdef CONFIG_SECURITY_SELINUX_DEVELOP
-int selinux_enforcing;
+RKP_RO_AREA int selinux_enforcing;
 
 static int __init enforcing_setup(char *str)
 {
 	unsigned long enforcing;
 	if (!kstrtoul(str, 0, &enforcing))
 // [ SEC_SELINUX_PORTING_COMMON
-#if defined(CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE)
+#ifdef CONFIG_ALWAYS_ENFORCE
 		selinux_enforcing = 1;
-#elif defined(CONFIG_SECURITY_SELINUX_NEVER_ENFORCE)
-		selinux_enforcing = 0;
 #else
 		selinux_enforcing = enforcing ? 1 : 0;
 #endif
@@ -208,7 +206,7 @@ static int __init selinux_enabled_setup(char *str)
 	unsigned long enabled;
 	if (!kstrtoul(str, 0, &enabled))
 // [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE
+#ifdef CONFIG_ALWAYS_ENFORCE
 		selinux_enabled = 1;
 #else
 		selinux_enabled = enabled ? 1 : 0;
@@ -2931,7 +2929,7 @@ static int selinux_sb_kern_mount(struct super_block *sb, int flags, void *data)
 	struct common_audit_data ad;
 	int rc;
 
-#ifdef CONFIG_RKP_KDP
+#ifdef CONFIG_RKP_KDP	
 	if ((rc = security_integrity_current()))
 		return rc;
 #endif  /* CONFIG_RKP_KDP */
@@ -3277,15 +3275,15 @@ static int selinux_inode_permission(struct inode *inode, int mask)
 		int count = 5;
 
 		while(count-- > 0) {
-			printk(KERN_ERR "SELinux : inode->i_security is not initialized. waiting...(%d/5)\n", 5-count);
+			printk(KERN_ERR "SELinux : inode->i_security is not initialized. waiting...(%d/5)\n", 5-count); 
 			udelay(500);
 			if(isec->initialized == 1) {
-				printk(KERN_ERR "SELinux : inode->i_security is INITIALIZED.\n");
+				printk(KERN_ERR "SELinux : inode->i_security is INITIALIZED.\n"); 
 				break;
 			}
 		}
 		if(isec->initialized != 1) {
-			printk(KERN_ERR "SELinux : inode->i_security is not initialized. not fixed.\n");
+			printk(KERN_ERR "SELinux : inode->i_security is not initialized. not fixed.\n"); 
 		}
 	}
 // ] SEC_SELINUX_PORTING_COMMON
@@ -3956,7 +3954,7 @@ static void selinux_file_set_fowner(struct file *file)
 #ifdef CONFIG_RKP_KDP
 	int rc;
 	if ((rc = security_integrity_current()))
-		return;
+		return; 
 #endif  /* CONFIG_RKP_KDP */
 	fsec = file->f_security;
 	fsec->fown_sid = current_sid();
@@ -5106,7 +5104,7 @@ static int selinux_socket_unix_may_send(struct socket *sock,
 	struct lsm_network_audit net = {0,};
 #ifdef CONFIG_RKP_KDP
 	int rc;
-
+	
 	if ((rc = security_integrity_current()))
 		return rc;
 #endif  /* CONFIG_RKP_KDP */
@@ -5378,7 +5376,7 @@ static void selinux_sk_clone_security(const struct sock *sk, struct sock *newsk)
 
 static void selinux_sk_getsecid(struct sock *sk, u32 *secid)
 {
-
+	
 #ifdef CONFIG_RKP_KDP
 	int rc;
 
@@ -5677,7 +5675,7 @@ static int selinux_nlmsg_perm(struct sock *sk, struct sk_buff *skb)
 			       sk->sk_protocol, nlh->nlmsg_type,
 			       secclass_map[sksec->sclass - 1].name);
 // [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE
+#ifdef CONFIG_ALWAYS_ENFORCE
 			if (security_get_allow_unknown())
 #else
 			if (!selinux_enforcing || security_get_allow_unknown())
@@ -6143,7 +6141,7 @@ static void selinux_msg_queue_free_security(struct msg_queue *msq)
 	if ((rc = security_integrity_current()))
 		return;
 #endif  /* CONFIG_RKP_KDP */
-
+ 
 	ipc_free_security(&msq->q_perm);
 }
 
@@ -6314,7 +6312,7 @@ static void selinux_shm_free_security(struct shmid_kernel *shp)
 	if ((rc = security_integrity_current()))
 		return;
 #endif  /* CONFIG_RKP_KDP */
-
+ 
 	ipc_free_security(&shp->shm_perm);
 }
 
@@ -7151,7 +7149,7 @@ static __init int selinux_init(void)
 {
 	if (!security_module_enable("selinux")) {
 // [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE
+#ifdef CONFIG_ALWAYS_ENFORCE
 		selinux_enabled = 1;
 #else
 		selinux_enabled = 0;
@@ -7185,10 +7183,8 @@ static __init int selinux_init(void)
 	if (avc_add_callback(selinux_netcache_avc_callback, AVC_CALLBACK_RESET))
 		panic("SELinux: Unable to register AVC netcache callback\n");
 // [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE
+#ifdef CONFIG_ALWAYS_ENFORCE
 		selinux_enforcing = 1;
-#elif defined(CONFIG_SECURITY_SELINUX_NEVER_ENFORCE)
-		selinux_enforcing = 0;
 #endif
 // ] SEC_SELINUX_PORTING_COMMON
 	if (selinux_enforcing)
@@ -7258,7 +7254,7 @@ static int __init selinux_nf_ip_init(void)
 {
 	int err;
 // [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE
+#ifdef CONFIG_ALWAYS_ENFORCE
 		selinux_enabled = 1;
 #endif
 // ] SEC_SELINUX_PORTING_COMMON

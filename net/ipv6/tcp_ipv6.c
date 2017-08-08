@@ -1146,7 +1146,8 @@ drop:
 #ifndef CONFIG_MPTCP
 static 
 #endif
-void tcp_v6_restore_cb(struct sk_buff *skb)
+
+static void tcp_v6_restore_cb(struct sk_buff *skb)
 {
 	/* We need to move header back to the beginning if xfrm6_policy_check()
 	 * and tcp_v6_fill_cb() are going to be called again.
@@ -1155,10 +1156,6 @@ void tcp_v6_restore_cb(struct sk_buff *skb)
 	memmove(IP6CB(skb), &TCP_SKB_CB(skb)->header.h6,
 		sizeof(struct inet6_skb_parm));
 }
-
-#ifndef CONFIG_MPTCP
-static 
-#endif
 struct sock *tcp_v6_syn_recv_sock(const struct sock *sk, struct sk_buff *skb,
 					 struct request_sock *req,
 					 struct dst_entry *dst,

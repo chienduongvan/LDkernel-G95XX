@@ -327,15 +327,7 @@ void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
 	 * up overwritting the contents of req->buf and this could confuse the
 	 * gadget driver.
 	 */
-	if (dwc->ep0_bounced && dep->number == 0) {
-#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
-		if (req->request.length > DWC3_EP0_BOUNCE_SIZE)
-		{
-			// we need unmap requst.
-			usb_gadget_unmap_request(&dwc->gadget, &req->request,
-					req->direction);
-		}
-#endif
+	if (dwc->ep0_bounced && dep->number <= 1) {
 		dwc->ep0_bounced = false;
 		unmap_after_complete = true;
 	} else {
@@ -2827,8 +2819,6 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
 	speed = reg & DWC3_DSTS_CONNECTSPD;
 	dwc->speed = speed;
 
-	dwc3_update_ram_clk_sel(dwc, speed);
-
 	switch (speed) {
 	case DWC3_DCFG_SUPERSPEED:
 		/*
@@ -2844,6 +2834,9 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
 		 * STAR#9000483510: RTL: SS : USB3 reset event may
 		 * not be generated always when the link enters poll
 		 */
+		
+		dwc3_update_ram_clk_sel(dwc, speed);
+
 		if (dwc->revision < DWC3_REVISION_190A)
 			dwc3_gadget_reset_interrupt(dwc);
 

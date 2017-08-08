@@ -94,6 +94,11 @@
 /* MALI_SEC_INTEGRATION */
 #include <backend/gpu/mali_kbase_pm_internal.h>
 
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_ASV_CALIBRATION_SUPPORT
+#include "./platform/exynos/gpu_control.h"
+#endif
+
 /* GPU IRQ Tags */
 #define	JOB_IRQ_TAG	0
 #define MMU_IRQ_TAG	1
@@ -1133,12 +1138,12 @@ void kbase_release_device(struct kbase_device *kbdev)
 }
 EXPORT_SYMBOL(kbase_release_device);
 
-#if KERNEL_VERSION(4, 4, 0) > LINUX_VERSION_CODE
+/*#if KERNEL_VERSION(4, 6, 0) > LINUX_VERSION_CODE */
 /*
  * Older versions, before v4.6, of the kernel doesn't have
  * kstrtobool_from_user().
  */
-static int kstrtobool_from_user(const char __user *s, size_t count, bool *res)
+/*static int kstrtobool_from_user(const char __user *s, size_t count, bool *res)
 {
 	char buf[32];
 
@@ -1150,7 +1155,7 @@ static int kstrtobool_from_user(const char __user *s, size_t count, bool *res)
 
 	return strtobool(buf, res);
 }
-#endif
+#endif */
 
 static ssize_t write_ctx_infinite_cache(struct file *f, const char __user *ubuf, size_t size, loff_t *off)
 {
@@ -4022,6 +4027,11 @@ static int kbase_platform_device_probe(struct platform_device *pdev)
 			"Probed as %s\n", dev_name(kbdev->mdev.this_device));
 
 	kbase_dev_nr++;
+
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_ASV_CALIBRATION_SUPPORT
+    gpu_asv_calibration_start_wq();
+#endif
 
 	return err;
 }

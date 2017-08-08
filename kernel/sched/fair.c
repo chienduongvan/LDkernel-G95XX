@@ -112,6 +112,7 @@ const_debug unsigned int sysctl_sched_migration_cost = 500000UL;
  * (default: 10msec)
  */
 unsigned int __read_mostly sysctl_sched_shares_window = 10000000UL;
+unsigned int sysctl_sched_wakeup_to_idle_cpu = 0;
 
 #ifdef CONFIG_CFS_BANDWIDTH
 /*
@@ -3129,8 +3130,8 @@ update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq, bool update_freq)
 
 	if (atomic_long_read(&cfs_rq->removed_load_avg)) {
 		s64 r = atomic_long_xchg(&cfs_rq->removed_load_avg, 0);
-		sa->load_avg = max_t(long, sa->load_avg - r, 0);
-		sa->load_sum = max_t(s64, sa->load_sum - r * LOAD_AVG_MAX, 0);
+		sub_positive(&sa->load_avg, r);
+		sub_positive(&sa->load_sum, r * LOAD_AVG_MAX);
 #ifdef CONFIG_SCHED_HMP
 		sa->hmp_load_avg = max_t(long, sa->hmp_load_avg - r, 0);
 #endif
@@ -3139,8 +3140,8 @@ update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq, bool update_freq)
 
 	if (atomic_long_read(&cfs_rq->removed_util_avg)) {
 		long r = atomic_long_xchg(&cfs_rq->removed_util_avg, 0);
-		sa->util_avg = max_t(long, sa->util_avg - r, 0);
-		sa->util_sum = max_t(s32, sa->util_sum - r * LOAD_AVG_MAX, 0);
+		sub_positive(&sa->util_avg, r);
+		sub_positive(&sa->util_sum, r * LOAD_AVG_MAX);
 		removed_util = 1;
 	}
 
@@ -6692,6 +6693,9 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 	int want_affine = 0;
 	int sync = wake_flags & WF_SYNC;
 	int thread_pid;
+
+	if(sysctl_sched_wakeup_to_idle_cpu)
+		sd_flag |= SD_BALANCE_WAKE;
 
 	if (sd_flag & SD_BALANCE_WAKE)
 #ifdef CONFIG_CPU_FREQ_GOV_SCHEDUTIL
