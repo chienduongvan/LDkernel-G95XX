@@ -1314,7 +1314,8 @@ static inline bool vma_is_anonymous(struct vm_area_struct *vma)
 	return !vma->vm_ops;
 }
 
-int vma_is_stack_for_task(struct vm_area_struct *vma, struct task_struct *t);
+extern struct task_struct *task_of_stack(struct task_struct *task,
+				struct vm_area_struct *vma, bool in_group);
 
 extern unsigned long move_page_tables(struct vm_area_struct *vma,
 		unsigned long old_addr, struct vm_area_struct *new_vma,
@@ -2042,6 +2043,30 @@ static inline struct vm_area_struct * find_vma_intersection(struct mm_struct * m
 	if (vma && end_addr <= vma->vm_start)
 		vma = NULL;
 	return vma;
+}
+
+static inline unsigned long vm_start_gap(struct vm_area_struct *vma)
+{
+	unsigned long vm_start = vma->vm_start;
+
+	if (vma->vm_flags & VM_GROWSDOWN) {
+		vm_start -= stack_guard_gap;
+		if (vm_start > vma->vm_start)
+			vm_start = 0;
+	}
+	return vm_start;
+}
+
+static inline unsigned long vm_end_gap(struct vm_area_struct *vma)
+{
+	unsigned long vm_end = vma->vm_end;
+
+	if (vma->vm_flags & VM_GROWSUP) {
+		vm_end += stack_guard_gap;
+		if (vm_end < vma->vm_end)
+			vm_end = -PAGE_SIZE;
+	}
+	return vm_end;
 }
 
 static inline unsigned long vm_start_gap(struct vm_area_struct *vma)
